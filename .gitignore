@@ -1,0 +1,10 @@
+# 비밀 값 — 절대 커밋하지 말 것 (Gemini API 키)
+.env
+.env.*
+!.env.example
+
+node_modules/
+.netlify/
+deno.lock
+.DS_Store
+*.log

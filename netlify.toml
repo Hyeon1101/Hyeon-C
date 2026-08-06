@@ -1,0 +1,32 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[dev]
+  port = 8790
+  publish = "public"
+
+# 네이버 중국어사전 프록시
+[[redirects]]
+  from = "/api/dict"
+  to = "/.netlify/functions/dict"
+  status = 200
+
+# Gemini 기반 AI (번역 / 문법 / 회화 / 발음교정)
+[[redirects]]
+  from = "/api/ai"
+  to = "/.netlify/functions/ai"
+  status = 200
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
