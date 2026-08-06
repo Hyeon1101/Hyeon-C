@@ -1,0 +1,29 @@
+{
+  "levels": [
+    {
+      "level": 1,
+      "count": 150
+    },
+    {
+      "level": 2,
+      "count": 147
+    },
+    {
+      "level": 3,
+      "count": 298
+    },
+    {
+      "level": 4,
+      "count": 598
+    },
+    {
+      "level": 5,
+      "count": 1298
+    },
+    {
+      "level": 6,
+      "count": 2500
+    }
+  ],
+  "total": 4991
+}

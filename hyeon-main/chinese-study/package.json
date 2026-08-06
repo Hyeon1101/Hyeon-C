@@ -1,0 +1,12 @@
+{
+  "name": "chinese-study",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "중국어 학습 도우미 — HSK 급수별 단어, 병음, 퀴즈, 문법, 번역, AI 회화 연습",
+  "scripts": {
+    "dev": "netlify dev",
+    "build:data": "node tools/build-data.mjs",
+    "enrich": "node tools/enrich-naver.mjs"
+  }
+}
