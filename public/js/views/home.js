@@ -19,21 +19,16 @@ export async function render(view) {
       </div>
     </section>
 
-    <div class="quick" style="grid-template-columns:repeat(5,1fr)">
+    <div class="quick">
       <a href="#/words">
         <div class="quick__ico">📚</div>
         <b>HSK 급수별 단어</b>
         <span>1~6급 4,991개 단어를 병음·뜻·예문과 함께</span>
       </a>
       <a href="#/quiz">
-        <div class="quick__ico">🧠</div>
-        <b>단어 퀴즈</b>
-        <span>저장한 단어로 4가지 방식의 복습 퀴즈</span>
-      </a>
-      <a href="#/dictation">
         <div class="quick__ico">✍️</div>
-        <b>받아쓰기</b>
-        <span>한글 문장을 중국어로 번역하는 작문 연습</span>
+        <b>퀴즈 & 받아쓰기</b>
+        <span>4가지 객관식 퀴즈와 AI 한중 작문 받아쓰기</span>
       </a>
       <a href="#/chat">
         <div class="quick__ico">💬</div>

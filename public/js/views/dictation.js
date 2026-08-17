@@ -9,6 +9,7 @@ import { ruby, colorPinyin, ensurePinyin } from '../pinyin.js';
 import * as store from '../store.js';
 import { loadLevel, ai } from '../api.js';
 import { speak, stopSpeaking, listenOnce, sttSupported } from '../speech.js';
+import * as quiz from './quiz.js';
 
 const LEVELS = [
   { id: 'beginner', name: '초급', hint: 'HSK 1~2급 · 짧은 문장' },
@@ -32,13 +33,13 @@ async function renderSetup(view) {
 
   view.innerHTML = `
     <div class="page-head">
-      <h1>받아쓰기 연습</h1>
-      <p>오늘 배운 단어로 만든 한국어 문장을 중국어로 번역해 보세요. AI가 즉시 채점하고 교정해 드려요.</p>
+      <h1>퀴즈 & 받아쓰기</h1>
+      <p>오늘 배운 단어로 만든 한국어 문장을 중국어로 번역해 보세요. AI가 즉시 채점하고 어디가 틀렸는지 알려드려요.</p>
     </div>
 
-    <div class="seg" style="margin-bottom:18px">
-      <a href="#/quiz" style="text-decoration:none;padding:6px 14px;border-radius:8px;color:var(--text-2);display:inline-block">🎯 단어 퀴즈 (객관식)</a>
-      <a href="#/dictation" class="is-on" style="text-decoration:none;padding:6px 14px;border-radius:8px;display:inline-block">✍️ AI 받아쓰기 (작문)</a>
+    <div class="seg" id="dict-tab-switcher" style="margin-bottom:22px;display:flex;width:100%;max-width:440px">
+      <button data-qmode="mcq" style="flex:1;padding:9px 14px;font-size:14px;font-weight:600">🎯 4지선다 퀴즈</button>
+      <button class="is-on" data-qmode="dictation" style="flex:1;padding:9px 14px;font-size:14px;font-weight:600">✍️ 한중 받아쓰기 (AI)</button>
     </div>
 
     <div class="grid c4" style="margin-bottom:22px">
@@ -116,6 +117,12 @@ async function renderSetup(view) {
   delegate(view, 'click', '#d-count button', (e, el) => {
     cfg.count = Number(el.dataset.count);
     view.querySelectorAll('#d-count button').forEach((b) => b.classList.toggle('is-on', b === el));
+  });
+
+  delegate(view, 'click', '#dict-tab-switcher button', async (e, el) => {
+    if (el.dataset.qmode === 'mcq') {
+      await quiz.render(view);
+    }
   });
 
   view.querySelector('#d-start').addEventListener('click', async () => {

@@ -672,9 +672,9 @@ select.input:focus, input.input:focus, textarea.input:focus { border-color: var(
   .mobilebar { display: flex; }
   .view { padding: 18px 14px 96px; }
   .grid.c2, .grid.c3, .grid.c4 { grid-template-columns: 1fr; }
-  .quick { grid-template-columns: repeat(2, 1fr) !important; }
-  .mobilebar a svg { width: 19px; height: 19px; }
-  .mobilebar a { font-size: 9.5px; padding: 7px 0 6px; }
+  .quick { grid-template-columns: repeat(2, 1fr); }
+  .mobilebar a svg { width: 21px; height: 21px; }
+  .mobilebar a { font-size: 10.5px; padding: 8px 0 7px; }
   .hero { padding: 22px 20px; }
   .hero h1 { font-size: 20px; }
   .hanzi { font-size: 28px; }

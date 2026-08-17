@@ -95,7 +95,7 @@ async function route() {
 }
 
 function markActiveTab(name) {
-  const tabName = name === 'word' || name === 'search' ? '' : name;
+  const tabName = name === 'word' || name === 'search' ? '' : name === 'dictation' ? 'quiz' : name;
   $$('#tabs a, .mobilebar a').forEach((a) => a.classList.toggle('is-on', a.dataset.tab === tabName));
 }
 

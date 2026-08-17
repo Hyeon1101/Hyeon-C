@@ -3,6 +3,7 @@ import { colorPinyin } from '../pinyin.js';
 import * as store from '../store.js';
 import { loadLevel } from '../api.js';
 import { speak } from '../speech.js';
+import * as dictation from './dictation.js';
 
 const MODES = {
   meaning: { name: '뜻 맞추기', desc: '한자를 보고 알맞은 뜻 고르기', icon: '🀄' },
@@ -13,8 +14,12 @@ const MODES = {
 
 let session = null;
 
-export async function render(view) {
+export async function render(view, params = {}) {
   session = null;
+  if (params.tab === 'dictation' || params.mode === 'dictation') {
+    await dictation.render(view);
+    return;
+  }
   await renderSetup(view);
 }
 
@@ -27,13 +32,13 @@ async function renderSetup(view) {
 
   view.innerHTML = `
     <div class="page-head">
-      <h1>단어 퀴즈</h1>
-      <p>공부한 단어를 4가지 방식으로 확인합니다. 틀린 단어는 자동으로 복습함에 담겨요.</p>
+      <h1>퀴즈 & 받아쓰기</h1>
+      <p>공부한 단어를 4가지 객관식 방식으로 확인하거나, 한글 문장을 보고 중국어로 적는 AI 받아쓰기 연습을 해보세요.</p>
     </div>
 
-    <div class="seg" style="margin-bottom:18px">
-      <a href="#/quiz" class="is-on" style="text-decoration:none;padding:6px 14px;border-radius:8px;display:inline-block">🎯 단어 퀴즈 (객관식)</a>
-      <a href="#/dictation" style="text-decoration:none;padding:6px 14px;border-radius:8px;color:var(--text-2);display:inline-block">✍️ AI 받아쓰기 (작문)</a>
+    <div class="seg" id="quiz-tab-switcher" style="margin-bottom:22px;display:flex;width:100%;max-width:440px">
+      <button class="is-on" data-qmode="mcq" style="flex:1;padding:9px 14px;font-size:14px;font-weight:600">🎯 4지선다 퀴즈</button>
+      <button data-qmode="dictation" style="flex:1;padding:9px 14px;font-size:14px;font-weight:600">✍️ 한중 받아쓰기 (AI)</button>
     </div>
 
     <div class="grid c4" style="margin-bottom:22px">
@@ -130,6 +135,12 @@ async function renderSetup(view) {
   delegate(view, 'click', '#q-count button', (e, el) => {
     cfg.count = Number(el.dataset.count);
     view.querySelectorAll('#q-count button').forEach((b) => b.classList.toggle('is-on', b === el));
+  });
+
+  delegate(view, 'click', '#quiz-tab-switcher button', async (e, el) => {
+    if (el.dataset.qmode === 'dictation') {
+      await dictation.render(view);
+    }
   });
 
   view.querySelector('#q-start').addEventListener('click', async () => {
