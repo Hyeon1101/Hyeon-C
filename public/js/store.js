@@ -76,7 +76,7 @@ export function todayKey(d = new Date()) {
 
 function dayEntry(key = todayKey()) {
   if (!state.days[key]) {
-    state.days[key] = { learned: 0, review: 0, quizRight: 0, quizWrong: 0, chat: 0, pron: 0, sec: 0 };
+    state.days[key] = { learned: 0, review: 0, quizRight: 0, quizWrong: 0, chat: 0, pron: 0, dictation: 0, sec: 0 };
   }
   return state.days[key];
 }
@@ -198,6 +198,12 @@ export function recordPron() {
   persist();
 }
 
+export function recordDictation(n = 1) {
+  dayEntry().dictation += n;
+  touchVisit();
+  persist();
+}
+
 /** 페이지에 머문 시간 누적 */
 export function recordSeconds(sec) {
   if (sec <= 0) return;
@@ -214,12 +220,12 @@ function touchVisit() {
 /** 학습한 날인지 (무엇이든 한 가지라도 했으면 참) */
 function isActive(d) {
   if (!d) return false;
-  return d.learned + d.review + d.quizRight + d.quizWrong + d.chat + d.pron > 0;
+  return d.learned + d.review + d.quizRight + d.quizWrong + d.chat + d.pron + (d.dictation || 0) > 0;
 }
 
 export function dayScore(d) {
   if (!d) return 0;
-  return d.learned + d.review * 0.5 + d.quizRight + d.quizWrong + d.chat + d.pron;
+  return d.learned + d.review * 0.5 + d.quizRight + d.quizWrong + d.chat + d.pron + (d.dictation || 0);
 }
 
 /** 연속 학습일 (오늘 아직 안 했으면 어제까지로 계산) */
@@ -267,6 +273,7 @@ export function stats() {
   const totalSec = days.reduce((s, [, d]) => s + (d.sec || 0), 0);
   const chat = days.reduce((s, [, d]) => s + d.chat, 0);
   const pron = days.reduce((s, [, d]) => s + (d.pron || 0), 0);
+  const dictation = days.reduce((s, [, d]) => s + (d.dictation || 0), 0);
 
   const byLevel = {};
   for (let lv = 1; lv <= 6; lv++) byLevel[lv] = 0;
@@ -285,12 +292,13 @@ export function stats() {
     accuracy: quizRight + quizWrong ? Math.round((quizRight / (quizRight + quizWrong)) * 100) : 0,
     chat,
     pron,
+    dictation,
     totalSec,
     streak: streak(),
     longest: longestStreak(),
     studyDays: totalStudyDays(),
     byLevel,
-    today: state.days[todayKey()] || { learned: 0, review: 0, quizRight: 0, quizWrong: 0, chat: 0, pron: 0, sec: 0 },
+    today: state.days[todayKey()] || { learned: 0, review: 0, quizRight: 0, quizWrong: 0, chat: 0, pron: 0, dictation: 0, sec: 0 },
   };
 }
 

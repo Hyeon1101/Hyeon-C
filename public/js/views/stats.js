@@ -70,6 +70,7 @@ export async function render(view) {
         <div class="list">
           ${row('💬 AI 회화 대화 수', `${s.chat}턴`)}
           ${row('🎤 발음 연습 횟수', `${s.pron}회`)}
+          ${row('✍️ 받아쓰기 연습', `${s.dictation || 0}문제`)}
           ${row('⭐ 복습이 필요한 단어', `${s.favCount}개`)}
           ${row('✅ 완전히 외운 단어', `${s.masteredCount}개`)}
           ${row('❌ 퀴즈 오답', `${s.quizWrong}문제`)}

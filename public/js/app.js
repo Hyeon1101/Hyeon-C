@@ -35,6 +35,7 @@ const ROUTES = {
   home: () => import('./views/home.js'),
   words: () => import('./views/words.js'),
   quiz: () => import('./views/quiz.js'),
+  dictation: () => import('./views/dictation.js'),
   chat: () => import('./views/chat.js'),
   grammar: () => import('./views/grammar.js'),
   stats: () => import('./views/stats.js'),

@@ -519,7 +519,7 @@ select.input:focus, input.input:focus, textarea.input:focus { border-color: var(
 }
 .mobilebar a {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 8px 0 7px; font-size: 10.5px; color: var(--text-3);
+  padding: 8px 0 7px; font-size: 10px; color: var(--text-3);
 }
 .mobilebar a.is-on { color: var(--accent); }
 .mobilebar svg { width: 21px; height: 21px; }
@@ -593,12 +593,74 @@ select.input:focus, input.input:focus, textarea.input:focus { border-color: var(
 .tone-4 { color: #2563eb; } /* 4성 */
 .tone-0 { color: var(--text-3); } /* 경성 */
 
+/* ---------- 받아쓰기 ---------- */
+.dict-stage { max-width: 640px; margin: 0 auto; }
+.dict-prompt {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-l);
+  padding: 32px 24px; text-align: center; box-shadow: var(--shadow-2);
+}
+.dict-prompt__ko {
+  font-size: 20px; font-weight: 650; line-height: 1.6; color: var(--text);
+  letter-spacing: -.2px; word-break: keep-all;
+}
+.dict-hint {
+  display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+  margin-top: 14px;
+}
+.dict-hint__chip {
+  background: var(--gold-soft); color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 22%, transparent);
+  border-radius: 8px; padding: 4px 10px; font-size: 12.5px; font-weight: 600;
+  font-family: var(--font-zh);
+}
+.dict-input {
+  width: 100%; margin-top: 16px; padding: 16px; border-radius: var(--radius);
+  border: 2px solid var(--border-2); background: var(--surface); font-family: var(--font-zh);
+  font-size: 20px; line-height: 1.8; outline: none; resize: vertical; min-height: 80px;
+  transition: border-color .15s;
+}
+.dict-input:focus { border-color: var(--accent); }
+.dict-input::placeholder { font-family: var(--font-ko); font-size: 15px; color: var(--text-3); }
+.dict-actions {
+  display: flex; gap: 8px; margin-top: 14px; justify-content: center;
+}
+.dict-score {
+  font-size: 48px; font-weight: 800; letter-spacing: -2px; line-height: 1;
+}
+.dict-diff {
+  display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;
+  font-family: var(--font-zh); font-size: 20px; line-height: 2;
+}
+.dict-diff__ok { color: var(--ok); }
+.dict-diff__miss {
+  color: var(--err); text-decoration: underline wavy var(--err); text-underline-offset: 5px;
+}
+.dict-diff__extra {
+  color: var(--warn); text-decoration: line-through; opacity: .7;
+}
+.dict-issue {
+  display: flex; gap: 12px; padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.dict-issue:last-child { border-bottom: none; }
+.dict-issue__arrow {
+  flex-shrink: 0; width: 28px; text-align: center; font-size: 14px;
+  font-weight: 700; color: var(--accent); padding-top: 2px;
+}
+.dict-issue__body { flex: 1; min-width: 0; }
+.dict-issue__parts {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  font-family: var(--font-zh); font-size: 16px;
+}
+.dict-issue__wrong { color: var(--err); text-decoration: line-through; }
+.dict-issue__right { color: var(--ok); font-weight: 600; }
+.dict-issue__why { font-size: 13px; color: var(--text-2); margin-top: 4px; line-height: 1.5; }
+
 /* ---------- 반응형 ---------- */
 @media (max-width: 900px) {
   .chat-wrap { grid-template-columns: 1fr; }
   .grid.c4 { grid-template-columns: repeat(2, 1fr); }
   .grid.c3 { grid-template-columns: repeat(2, 1fr); }
-  .quick { grid-template-columns: repeat(2, 1fr); }
+  .quick { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
 @media (max-width: 720px) {
@@ -610,7 +672,9 @@ select.input:focus, input.input:focus, textarea.input:focus { border-color: var(
   .mobilebar { display: flex; }
   .view { padding: 18px 14px 96px; }
   .grid.c2, .grid.c3, .grid.c4 { grid-template-columns: 1fr; }
-  .quick { grid-template-columns: repeat(2, 1fr); }
+  .quick { grid-template-columns: repeat(2, 1fr) !important; }
+  .mobilebar a svg { width: 19px; height: 19px; }
+  .mobilebar a { font-size: 9.5px; padding: 7px 0 6px; }
   .hero { padding: 22px 20px; }
   .hero h1 { font-size: 20px; }
   .hanzi { font-size: 28px; }
