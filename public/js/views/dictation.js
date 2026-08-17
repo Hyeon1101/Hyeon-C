@@ -8,7 +8,7 @@ import { esc, emptyBlock, sample, toast, delegate, ICON } from '../ui.js';
 import { ruby, colorPinyin, ensurePinyin } from '../pinyin.js';
 import * as store from '../store.js';
 import { loadLevel, ai } from '../api.js';
-import { speak } from '../speech.js';
+import { speak, stopSpeaking, listenOnce, sttSupported } from '../speech.js';
 
 const LEVELS = [
   { id: 'beginner', name: '초급', hint: 'HSK 1~2급 · 짧은 문장' },
@@ -34,6 +34,11 @@ async function renderSetup(view) {
     <div class="page-head">
       <h1>받아쓰기 연습</h1>
       <p>오늘 배운 단어로 만든 한국어 문장을 중국어로 번역해 보세요. AI가 즉시 채점하고 교정해 드려요.</p>
+    </div>
+
+    <div class="seg" style="margin-bottom:18px">
+      <a href="#/quiz" style="text-decoration:none;padding:6px 14px;border-radius:8px;color:var(--text-2);display:inline-block">🎯 단어 퀴즈 (객관식)</a>
+      <a href="#/dictation" class="is-on" style="text-decoration:none;padding:6px 14px;border-radius:8px;display:inline-block">✍️ AI 받아쓰기 (작문)</a>
     </div>
 
     <div class="grid c4" style="margin-bottom:22px">
@@ -235,7 +240,12 @@ function drawQuestion(view) {
         }
       </div>
 
-      <textarea class="dict-input" id="d-answer" rows="2" placeholder="중국어로 입력하세요…" autofocus></textarea>
+      <div style="position:relative;margin-top:16px">
+        <textarea class="dict-input" id="d-answer" rows="2" placeholder="중국어로 입력하거나 마이크로 말해 보세요…" style="margin-top:0;padding-right:52px" autofocus></textarea>
+        <button type="button" class="mic-btn" id="d-mic" title="음성으로 입력 (중국어)" aria-label="음성 입력" style="position:absolute;right:10px;bottom:14px;width:36px;height:36px;border-radius:10px">
+          ${ICON.mic}
+        </button>
+      </div>
 
       <div class="dict-actions">
         <button class="btn btn--primary btn--lg" id="d-submit" style="flex:1;max-width:240px">확인</button>
@@ -248,9 +258,41 @@ function drawQuestion(view) {
   const textarea = view.querySelector('#d-answer');
   const submitBtn = view.querySelector('#d-submit');
   const skipBtn = view.querySelector('#d-skip');
+  const micBtn = view.querySelector('#d-mic');
 
   // 자동 포커스
   setTimeout(() => textarea.focus(), 100);
+
+  // 음성 입력 (STT)
+  let recorder = null;
+  micBtn.addEventListener('click', async () => {
+    if (recorder) {
+      recorder.stop();
+      return;
+    }
+    if (!sttSupported()) {
+      toast('음성 입력은 크롬·엣지에서 지원돼요.');
+      return;
+    }
+    micBtn.classList.add('is-rec');
+    stopSpeaking();
+    recorder = listenOnce({
+      lang: 'zh-CN',
+      interim: (t) => {
+        textarea.value = t;
+      },
+    });
+    try {
+      const { text } = await recorder.promise;
+      textarea.value = text;
+      textarea.focus();
+    } catch (err) {
+      if (err.message) toast(err.message);
+    } finally {
+      micBtn.classList.remove('is-rec');
+      recorder = null;
+    }
+  });
 
   // Enter로 제출 (Shift+Enter = 줄바꿈)
   textarea.addEventListener('keydown', (e) => {
@@ -263,6 +305,7 @@ function drawQuestion(view) {
   submitBtn.addEventListener('click', () => submitAnswer(view, textarea.value.trim()));
   skipBtn.addEventListener('click', () => submitAnswer(view, ''));
   view.querySelector('#d-quit').addEventListener('click', () => {
+    if (recorder) recorder.stop();
     if (session.results.length > 0) drawResult(view);
     else renderSetup(view);
   });

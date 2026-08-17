@@ -31,6 +31,11 @@ async function renderSetup(view) {
       <p>공부한 단어를 4가지 방식으로 확인합니다. 틀린 단어는 자동으로 복습함에 담겨요.</p>
     </div>
 
+    <div class="seg" style="margin-bottom:18px">
+      <a href="#/quiz" class="is-on" style="text-decoration:none;padding:6px 14px;border-radius:8px;display:inline-block">🎯 단어 퀴즈 (객관식)</a>
+      <a href="#/dictation" style="text-decoration:none;padding:6px 14px;border-radius:8px;color:var(--text-2);display:inline-block">✍️ AI 받아쓰기 (작문)</a>
+    </div>
+
     <div class="grid c4" style="margin-bottom:22px">
       <div class="stat"><div class="stat__label">누적 정답률</div><div class="stat__value">${s.quizTotal ? s.accuracy : 0}<small>%</small></div><div class="stat__hint">${s.quizRight}정답 / ${s.quizTotal}문제</div></div>
       <div class="stat"><div class="stat__label">내 단어장</div><div class="stat__value">${s.savedCount}<small>개</small></div></div>
