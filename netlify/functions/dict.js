@@ -80,21 +80,65 @@ function pickItems(data, key) {
   return data?.searchResultMap?.searchResultListMap?.[key]?.items || [];
 }
 
+function getCandidates(rawEntry) {
+  const s = strip(rawEntry).replace(/[《》]/g, '').trim();
+  const set = new Set();
+  set.add(s);
+
+  const noParen = s.replace(/[\(（][^）\)]*[\)）]/g, '').trim();
+  set.add(noParen);
+
+  const unParen = s.replace(/[\(（\)]/g, '').replace(/（|）/g, '').trim();
+  set.add(unParen);
+
+  set.add(s.replace(/[.·…\s]/g, ''));
+  set.add(noParen.replace(/[.·…\s]/g, ''));
+  set.add(unParen.replace(/[.·…\s]/g, ''));
+
+  return Array.from(set).filter(Boolean);
+}
+
 /** 검색 결과 중 실제로 찾던 표제어를 고른다 */
 function bestEntry(items, query) {
   let best = null;
-  let bestScore = -1;
+  let bestScore = -999;
   for (const it of items) {
-    const entry = strip(it.expEntry);
+    const rawEntry = strip(it.expEntry);
+    const cands = getCandidates(rawEntry);
+    const src = it.sourceDictnameKO || '';
+
     let score = 0;
-    if (entry === query) score += 100;
-    else if (entry.replace(/[《》\s]/g, '') === query) score += 60;
+    if (rawEntry === query) score += 100;
+    else if (cands.includes(query)) score += 90;
     else continue; // 표제어가 다르면 후보에서 제외
-    if (String(it.matchType || '').startsWith('exact:entry')) score += 30;
-    if (it.meansCollector?.length) score += 20;
-    if (it.searchPhoneticSymbolList?.[0]?.symbolValue) score += 15;
+
+    if (src.includes('고려대')) score += 80;
+    else if (
+      src.includes('교학사') ||
+      src.includes('한국외국어') ||
+      src.includes('표준중중한') ||
+      src.includes('중한') ||
+      src.includes('한중')
+    )
+      score += 65;
+    else if (src.includes('국립국어원') || src.includes('한국어')) score += 40;
+    else if (src.includes('Collins')) score -= 50;
+    else if (src.includes('HDWIKI')) score -= 80;
+    else if (src.includes('웹수집')) score -= 20;
+
+    const meansText = (it.meansCollector || [])
+      .flatMap((g) => (g.means || []).map((m) => m.value))
+      .join(' ');
+    if (/[가-힣]/.test(meansText)) score += 60;
+    else score -= 40;
+
+    if (/^\(☞[^\)]+\)$/.test(strip(meansText))) score -= 40;
+
+    if (it.meansCollector?.length) score += 15;
+    if (it.searchPhoneticSymbolList?.[0]?.symbolValue) score += 10;
     if (it.frequencyAdd) score += 10;
     score += Number(it.documentQuality || 0);
+
     if (score > bestScore) {
       bestScore = score;
       best = it;
@@ -112,6 +156,23 @@ function parseAudio(symbolFile) {
 function parseHsk(frequencyAdd) {
   const m = /HSK\s*(\d)/i.exec(String(frequencyAdd || ''));
   return m ? Number(m[1]) : null;
+}
+
+function cleanPinyin(py) {
+  return strip(py)
+    .replace(/\/\//g, '')
+    .replace(/[\(（][^）\)]*[\)）]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractCrossReference(means) {
+  for (const m of means) {
+    const text = typeof m === 'string' ? m : m.text || '';
+    const match = /^\(☞([^)]+)\)$/.exec(strip(text));
+    if (match) return match[1].replace(/[\(（][^）\)]*[\)）]/g, '').replace(/\d+/g, '').trim();
+  }
+  return null;
 }
 
 /** 단어 항목 → 우리 앱 형식 */
@@ -133,9 +194,9 @@ function parseWord(it) {
   }
 
   return {
-    word: strip(it.expEntry),
+    word: strip(it.expEntry).replace(/[\(（][^）\)]*[\)）]/g, ''),
     traditional: strip(it.searchTraditionalChineseList?.[0]?.value || ''),
-    pinyin: strip(phon.symbolValue),
+    pinyin: cleanPinyin(phon.symbolValue),
     audio: parseAudio(phon.symbolFile),
     hsk: parseHsk(it.frequencyAdd),
     means,
@@ -164,7 +225,23 @@ async function lookupWord(query) {
   if (cached !== null) return cached;
 
   const data = await naver(searchUrl(query));
-  const parsed = parseWord(bestEntry(pickItems(data, 'WORD'), query));
+  let parsed = parseWord(bestEntry(pickItems(data, 'WORD'), query));
+
+  // 단독 참조형(☞...) 보강
+  if (parsed && parsed.means?.length) {
+    const crossRef = extractCrossReference(parsed.means);
+    if (crossRef && crossRef !== query) {
+      const refData = await naver(searchUrl(crossRef));
+      const refParsed = parseWord(bestEntry(pickItems(refData, 'WORD'), crossRef));
+      if (refParsed?.means?.length) {
+        parsed.means = refParsed.means;
+        if (!parsed.examples?.length && refParsed.examples?.length) {
+          parsed.examples = refParsed.examples;
+        }
+      }
+    }
+  }
+
   cacheSet(key, parsed);
   return parsed;
 }
