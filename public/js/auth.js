@@ -78,7 +78,8 @@ export function initAuth() {
       if (dropdown) dropdown.style.display = 'none';
       store.clearUser();
       renderAuthUI();
-      toast('구글 계정에서 로그아웃되었습니다.');
+      toast('로그아웃되었습니다. 게스트 모드로 전환합니다.');
+      setTimeout(() => location.reload(), 300);
     });
   }
 
@@ -184,7 +185,8 @@ function handleCredentialResponse(response) {
     };
     store.setUser(user);
     closeLoginModal();
-    toast(`환영합니다, ${user.name || user.email}님! 학습 내용이 자동 저장됩니다.`);
+    toast(`환영합니다, ${user.name || user.email}님!`);
+    setTimeout(() => location.reload(), 300);
   }
 }
 
@@ -270,7 +272,8 @@ export function openGoogleLoginModal() {
     };
     store.setUser(user);
     closeLoginModal();
-    toast(`${email} 계정으로 학습 데이터가 연동되었습니다!`);
+    toast(`${email} 계정으로 로그인되었습니다.`);
+    setTimeout(() => location.reload(), 300);
   });
 }
 

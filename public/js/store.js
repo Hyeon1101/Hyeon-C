@@ -4,6 +4,7 @@
  */
 
 const BASE_KEY = 'hanyu.study.v1';
+const GUEST_KEY = 'hanyu.study.v1:guest';
 const USER_KEY = 'hanyu.user.profile';
 
 let currentUser = loadUser();
@@ -19,9 +20,10 @@ function loadUser() {
 
 function getStorageKey() {
   if (currentUser && (currentUser.email || currentUser.id)) {
-    return `${BASE_KEY}:${currentUser.email || currentUser.id}`;
+    const userIdentifier = (currentUser.email || currentUser.id).toLowerCase().trim();
+    return `${BASE_KEY}:user:${userIdentifier}`;
   }
-  return BASE_KEY;
+  return GUEST_KEY;
 }
 
 const DEFAULTS = () => ({
@@ -46,11 +48,7 @@ const listeners = new Set();
 function load() {
   try {
     const key = getStorageKey();
-    let raw = localStorage.getItem(key);
-    // 만약 로그인한 사용자 전용 키에 데이터가 아직 없으면 기본 게스트 데이터에서 복사 마이그레이션
-    if (!raw && key !== BASE_KEY) {
-      raw = localStorage.getItem(BASE_KEY);
-    }
+    const raw = localStorage.getItem(key);
     if (!raw) return DEFAULTS();
     const parsed = JSON.parse(raw);
     const base = DEFAULTS();
@@ -74,10 +72,6 @@ function persist() {
     try {
       const key = getStorageKey();
       localStorage.setItem(key, JSON.stringify(state));
-      // 게스트 키에도 백업 동기화
-      if (key !== BASE_KEY) {
-        localStorage.setItem(BASE_KEY, JSON.stringify(state));
-      }
     } catch (e) {
       console.warn('저장 실패', e);
     }
@@ -97,7 +91,7 @@ export function setUser(user) {
     console.warn(e);
   }
   state = load();
-  persist();
+  listeners.forEach((fn) => fn(state));
 }
 
 export function clearUser() {
@@ -108,7 +102,7 @@ export function clearUser() {
     console.warn(e);
   }
   state = load();
-  persist();
+  listeners.forEach((fn) => fn(state));
 }
 
 export function exportData() {
