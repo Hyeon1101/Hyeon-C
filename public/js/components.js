@@ -15,7 +15,7 @@ export function wordCard(word, opts = {}) {
   const entry = store.getWord(w);
   const fav = entry?.fav;
   const level = word.h || word.l || word.hsk || 0;
-  const payload = esc(JSON.stringify({ w, p: pinyin, k: means.slice(0, 3), h: level }));
+  const payload = esc(JSON.stringify({ w, p: pinyin, k: means.slice(0, 3), h: level, ex: example ? [example] : (word.ex || []) }));
 
   return `
   <article class="wordcard" data-word="${esc(w)}">

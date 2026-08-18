@@ -153,13 +153,13 @@ async function currentList() {
   if (ui.tab === 'hsk') {
     list = await loadLevel(ui.level);
   } else if (ui.tab === 'saved') {
-    list = store.allWords().map(toCard);
+    list = await Promise.all(store.allWords().map(enrichSavedEntry));
   } else {
-    list = store.favorites().map(toCard);
+    list = await Promise.all(store.favorites().map(enrichSavedEntry));
   }
 
   if (ui.filter) {
-    const q = ui.filter;
+    const q = ui.filter.toLowerCase();
     list = list.filter(
       (x) =>
         x.w.includes(q) ||
@@ -179,12 +179,23 @@ async function currentList() {
   return list;
 }
 
-function toCard(entry) {
+async function enrichSavedEntry(entry) {
+  let ex = entry.ex || [];
+  let k = entry.k || [];
+  let p = entry.p || '';
+  if (!ex.length || !k.length || !p) {
+    const hsk = await findInHsk(entry.w).catch(() => null);
+    if (hsk) {
+      if (!ex.length) ex = hsk.ex || [];
+      if (!k.length) k = hsk.k || [];
+      if (!p) p = hsk.p || '';
+    }
+  }
   return {
     w: entry.w,
-    p: entry.p,
-    k: entry.k || [],
-    ex: entry.ex || [],
+    p: p,
+    k: k,
+    ex: ex,
     h: entry.h,
     l: entry.h,
     addedAt: entry.addedAt,

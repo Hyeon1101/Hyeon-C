@@ -1,7 +1,7 @@
 import { esc, emptyBlock, fmtSeconds, sample, loadingBlock } from '../ui.js';
 import { wordCard } from '../components.js';
 import * as store from '../store.js';
-import { loadLevel } from '../api.js';
+import { loadLevel, findInHsk } from '../api.js';
 
 export async function render(view) {
   const s = store.stats();
@@ -80,10 +80,27 @@ export async function render(view) {
   `;
 
   /* 복습 단어 */
-  const favs = store.favorites().sort((a, b) => (a.mastery - b.mastery) || (b.wrong - a.wrong));
+  const rawFavs = store.favorites().sort((a, b) => (a.mastery - b.mastery) || (b.wrong - a.wrong));
+  const favs = await Promise.all(
+    rawFavs.slice(0, 8).map(async (w) => {
+      if (!w.ex?.length || !w.k?.length || !w.p) {
+        const hsk = await findInHsk(w.w).catch(() => null);
+        if (hsk) {
+          return {
+            ...w,
+            ex: w.ex?.length ? w.ex : hsk.ex,
+            k: w.k?.length ? w.k : hsk.k,
+            p: w.p || hsk.p,
+            h: w.h || hsk.h,
+          };
+        }
+      }
+      return w;
+    })
+  );
   const reviewBox = view.querySelector('#home-review');
   reviewBox.innerHTML = favs.length
-    ? `<div class="grid c4">${favs.slice(0, 8).map((w) => wordCard(w)).join('')}</div>`
+    ? `<div class="grid c4">${favs.map((w) => wordCard(w)).join('')}</div>`
     : emptyBlock({
         icon: '⭐',
         title: '복습할 단어가 아직 없어요',
