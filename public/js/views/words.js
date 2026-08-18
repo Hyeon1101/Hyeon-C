@@ -2,7 +2,7 @@ import { esc, emptyBlock, loadingBlock, errorBlock, delegate, ICON, toast, shuff
 import { wordCard, displayToggles, applyDisplaySettings } from '../components.js';
 import { ruby, colorPinyin, ensurePinyin } from '../pinyin.js';
 import * as store from '../store.js';
-import { loadLevel } from '../api.js';
+import { loadLevel, findInHsk } from '../api.js';
 import { speak } from '../speech.js';
 
 const PAGE = 60;
