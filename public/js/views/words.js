@@ -104,8 +104,22 @@ function bind(view) {
   });
 
   view.querySelector('#w-flash').addEventListener('click', async () => {
-    const list = await currentList();
+    let list = await currentList();
     if (!list.length) return toast('학습할 단어가 없습니다.');
+
+    // HSK 급수별 탭에서 학습할 때, 이미 내 단어장에 저장된 단어는 중복 학습되지 않도록 제외
+    if (ui.tab === 'hsk') {
+      const unlearned = list.filter((w) => !store.hasWord(w.w));
+      if (!unlearned.length) {
+        return toast(`HSK ${ui.level}급 단어(${list.length}개)를 모두 학습하여 내 단어장에 저장했습니다! '내 단어장'이나 '복습함'에서 복습할 수 있어요.`);
+      }
+      const savedCount = list.length - unlearned.length;
+      if (savedCount > 0) {
+        toast(`이미 저장된 ${savedCount}개 단어를 제외하고, 미학습 단어 ${unlearned.length}개 중 ${Math.min(40, unlearned.length)}개로 학습을 시작합니다.`);
+      }
+      list = unlearned;
+    }
+
     startFlashcards(view, shuffle(list).slice(0, 40));
   });
 }
