@@ -94,15 +94,49 @@ export function setUser(user) {
   listeners.forEach((fn) => fn(state));
 }
 
-export function clearUser() {
-  currentUser = null;
+export function getSavedAccounts() {
+  const accounts = [];
+  const prefix = `${BASE_KEY}:user:`;
   try {
-    localStorage.removeItem(USER_KEY);
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) {
+        const identifier = k.slice(prefix.length);
+        const dataStr = localStorage.getItem(k);
+        let wordCount = 0;
+        let lastVisit = 0;
+        try {
+          const d = JSON.parse(dataStr);
+          wordCount = Object.keys(d.words || {}).length;
+          lastVisit = d.meta?.lastVisit || 0;
+        } catch {}
+        const isCurrent = currentUser && (currentUser.email || currentUser.id).toLowerCase() === identifier;
+        accounts.push({
+          id: identifier,
+          email: identifier.includes('@') ? identifier : `${identifier}@google.com`,
+          name: identifier.includes('@') ? identifier.split('@')[0] : identifier,
+          wordCount,
+          lastVisit,
+          isCurrent,
+        });
+      }
+    }
   } catch (e) {
     console.warn(e);
   }
-  state = load();
-  listeners.forEach((fn) => fn(state));
+  return accounts.sort((a, b) => b.lastVisit - a.lastVisit);
+}
+
+export function deleteAccount(identifier) {
+  const key = `${BASE_KEY}:user:${identifier.toLowerCase().trim()}`;
+  try {
+    localStorage.removeItem(key);
+    if (currentUser && (currentUser.email || currentUser.id).toLowerCase() === identifier.toLowerCase()) {
+      clearUser();
+    }
+  } catch (e) {
+    console.warn(e);
+  }
 }
 
 export function exportData() {
