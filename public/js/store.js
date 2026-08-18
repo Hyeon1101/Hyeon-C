@@ -3,7 +3,26 @@
  * 저장 단어 / 즐겨찾기 / 일별 학습기록 / 스트릭 / 설정을 담당한다.
  */
 
-const KEY = 'hanyu.study.v1';
+const BASE_KEY = 'hanyu.study.v1';
+const USER_KEY = 'hanyu.user.profile';
+
+let currentUser = loadUser();
+
+function loadUser() {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getStorageKey() {
+  if (currentUser && (currentUser.email || currentUser.id)) {
+    return `${BASE_KEY}:${currentUser.email || currentUser.id}`;
+  }
+  return BASE_KEY;
+}
 
 const DEFAULTS = () => ({
   v: 1,
@@ -26,7 +45,12 @@ const listeners = new Set();
 
 function load() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const key = getStorageKey();
+    let raw = localStorage.getItem(key);
+    // 만약 로그인한 사용자 전용 키에 데이터가 아직 없으면 기본 게스트 데이터에서 복사 마이그레이션
+    if (!raw && key !== BASE_KEY) {
+      raw = localStorage.getItem(BASE_KEY);
+    }
     if (!raw) return DEFAULTS();
     const parsed = JSON.parse(raw);
     const base = DEFAULTS();
@@ -48,12 +72,59 @@ function persist() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      const key = getStorageKey();
+      localStorage.setItem(key, JSON.stringify(state));
+      // 게스트 키에도 백업 동기화
+      if (key !== BASE_KEY) {
+        localStorage.setItem(BASE_KEY, JSON.stringify(state));
+      }
     } catch (e) {
       console.warn('저장 실패', e);
     }
   }, 180);
   listeners.forEach((fn) => fn(state));
+}
+
+export function getUser() {
+  return currentUser;
+}
+
+export function setUser(user) {
+  currentUser = user;
+  try {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch (e) {
+    console.warn(e);
+  }
+  state = load();
+  persist();
+}
+
+export function clearUser() {
+  currentUser = null;
+  try {
+    localStorage.removeItem(USER_KEY);
+  } catch (e) {
+    console.warn(e);
+  }
+  state = load();
+  persist();
+}
+
+export function exportData() {
+  return JSON.stringify(state, null, 2);
+}
+
+export function importData(text) {
+  try {
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== 'object' || !parsed.words) return false;
+    state = { ...DEFAULTS(), ...parsed };
+    persist();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function subscribe(fn) {

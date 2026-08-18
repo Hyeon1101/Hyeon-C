@@ -5,6 +5,7 @@ import { bindCommonActions, bindDisplayToggles, applyDisplaySettings, refreshBad
 import * as store from './store.js';
 import { listenOnce, sttSupported, stopSpeaking } from './speech.js';
 import { detectMode } from './views/search.js';
+import { initAuth } from './auth.js';
 
 const view = $('#view');
 let currentRoute = '';
@@ -170,6 +171,7 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------------- 공통 동작 ---------------- */
 
+initAuth();
 bindCommonActions(view);
 bindDisplayToggles(view);
 
