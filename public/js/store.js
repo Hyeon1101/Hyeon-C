@@ -9,6 +9,24 @@ const USER_KEY = 'hanyu.user.profile';
 
 let currentUser = loadUser();
 
+// 게스트 상태일 때 기존 localStorage에 남아있던 게스트 데이터 정리
+if (isGuest()) {
+  try {
+    localStorage.removeItem(GUEST_KEY);
+    localStorage.removeItem(BASE_KEY);
+  } catch (e) {}
+}
+
+function isGuest() {
+  return !currentUser || (!currentUser.email && !currentUser.id);
+}
+
+function getStorage() {
+  // 비로그인 게스트는 사이트 종료 시 초기화되는 sessionStorage 사용,
+  // 로그인 유저는 영구 보존되는 localStorage 사용
+  return isGuest() ? sessionStorage : localStorage;
+}
+
 function loadUser() {
   try {
     const raw = localStorage.getItem(USER_KEY);
@@ -47,8 +65,9 @@ const listeners = new Set();
 
 function load() {
   try {
+    const storage = getStorage();
     const key = getStorageKey();
-    const raw = localStorage.getItem(key);
+    const raw = storage.getItem(key);
     if (!raw) return DEFAULTS();
     const parsed = JSON.parse(raw);
     const base = DEFAULTS();
@@ -70,8 +89,9 @@ function persist() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
+      const storage = getStorage();
       const key = getStorageKey();
-      localStorage.setItem(key, JSON.stringify(state));
+      storage.setItem(key, JSON.stringify(state));
     } catch (e) {
       console.warn('저장 실패', e);
     }
@@ -87,6 +107,18 @@ export function setUser(user) {
   currentUser = user;
   try {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch (e) {
+    console.warn(e);
+  }
+  state = load();
+  listeners.forEach((fn) => fn(state));
+}
+
+export function clearUser() {
+  currentUser = null;
+  try {
+    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(GUEST_KEY);
   } catch (e) {
     console.warn(e);
   }
