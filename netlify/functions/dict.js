@@ -283,8 +283,8 @@ function json(body, { status = 200, cache = 'public, max-age=86400, s-maxage=604
 
 export default async (req) => {
   const url = new URL(req.url);
-  const q = (url.searchParams.get('q') || '').trim();
-  const words = (url.searchParams.get('words') || '').trim();
+  const q = String(url.searchParams.get('q') || '').trim().slice(0, 200);
+  const words = String(url.searchParams.get('words') || '').trim().slice(0, 500);
   const dir = url.searchParams.get('dir') || 'zhko';
   const withExamples = url.searchParams.get('ex') === '1';
 

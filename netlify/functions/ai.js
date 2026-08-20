@@ -405,9 +405,13 @@ export default async (req) => {
 
   let payload;
   try {
-    payload = await req.json();
+    const raw = await req.text();
+    if (raw.length > 20000) {
+      return json({ ok: false, error: '요청 본문이 너무 큽니다. (최대 20KB)' }, 413);
+    }
+    payload = JSON.parse(raw);
   } catch {
-    return json({ ok: false, error: '잘못된 요청 형식입니다.' }, 400);
+    return json({ ok: false, error: '잘못된 JSON 요청 형식입니다.' }, 400);
   }
 
   const { action } = payload || {};

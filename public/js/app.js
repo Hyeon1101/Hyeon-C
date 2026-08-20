@@ -87,7 +87,7 @@ async function route() {
     }
   } catch (err) {
     console.error(err);
-    root.innerHTML = `<div class="empty"><div class="empty__icon">⚠️</div><h3>화면을 여는 데 실패했어요</h3><p>${err.message}</p></div>`;
+    root.innerHTML = `<div class="empty"><div class="empty__icon">⚠️</div><h3>화면을 여는 데 실패했어요</h3><p>${esc(err.message)}</p></div>`;
   }
 
   applyDisplaySettings();
