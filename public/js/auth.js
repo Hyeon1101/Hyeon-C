@@ -99,6 +99,30 @@ export function initAuth() {
     });
   }
 
+  // 클라우드 실시간 동기화 버튼
+  const syncBtn = document.getElementById('btn-sync-cloud');
+  if (syncBtn) {
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.disabled = true;
+      syncBtn.textContent = '🔄 동기화 중…';
+      try {
+        const res = await store.syncFromCloud();
+        if (res && res.success) {
+          toast(`☁️ 클라우드 동기화 완료! (${res.count || 0}개 단어 연동됨)`);
+          setTimeout(() => location.reload(), 400);
+        } else {
+          await store.syncToCloud();
+          toast('☁️ 현재 학습 데이터가 클라우드에 백업되었습니다!');
+        }
+      } catch (err) {
+        toast('클라우드 동기화 중 오류가 발생했습니다.');
+      } finally {
+        syncBtn.disabled = false;
+        syncBtn.textContent = '🔄 클라우드 지금 동기화';
+      }
+    });
+  }
+
   // 데이터 복원 가져오기 (JSON)
   if (importBtn) {
     importBtn.addEventListener('click', () => {
@@ -172,7 +196,7 @@ function parseJwt(token) {
   }
 }
 
-function handleCredentialResponse(response) {
+async function handleCredentialResponse(response) {
   if (!response || !response.credential) return;
   const payload = parseJwt(response.credential);
   if (payload) {
@@ -184,9 +208,10 @@ function handleCredentialResponse(response) {
       loggedInAt: Date.now(),
     };
     store.setUser(user);
+    await store.syncFromCloud(user);
     closeLoginModal();
-    toast(`환영합니다, ${user.name || user.email}님!`);
-    setTimeout(() => location.reload(), 300);
+    toast(`☁️ 환영합니다, ${user.name || user.email}님! (클라우드 연동 완료)`);
+    setTimeout(() => location.reload(), 350);
   }
 }
 
@@ -287,7 +312,7 @@ export function openGoogleLoginModal() {
 
   // 저장된 계정 클릭 시 즉시 전환
   modalEl.querySelectorAll('.btn-switch-account').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const email = btn.dataset.accEmail;
       const name = btn.dataset.accName;
       const user = {
@@ -298,8 +323,9 @@ export function openGoogleLoginModal() {
         loggedInAt: Date.now(),
       };
       store.setUser(user);
+      await store.syncFromCloud(user);
       closeLoginModal();
-      toast(`${email} 계정으로 전환되었습니다.`);
+      toast(`☁️ ${email} 계정으로 전환되었습니다.`);
       setTimeout(() => location.reload(), 300);
     });
   });
@@ -318,10 +344,15 @@ export function openGoogleLoginModal() {
   });
 
   // 빠른 이메일 계정 로그인 처리
-  modalEl.querySelector('#quick-email-login-form').addEventListener('submit', (e) => {
+  modalEl.querySelector('#quick-email-login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = modalEl.querySelector('#login-email-input').value.trim();
     if (!email) return;
+    const submitBtn = modalEl.querySelector('#quick-email-login-form button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = '클라우드 연동 중…';
+    }
     const name = email.split('@')[0];
     const user = {
       id: 'usr_' + Math.abs(hashCode(email)),
@@ -331,9 +362,14 @@ export function openGoogleLoginModal() {
       loggedInAt: Date.now(),
     };
     store.setUser(user);
+    const syncRes = await store.syncFromCloud(user);
     closeLoginModal();
-    toast(`${email} 계정으로 로그인되었습니다.`);
-    setTimeout(() => location.reload(), 300);
+    if (syncRes && syncRes.count) {
+      toast(`☁️ ${email} 계정 연동 완료! (${syncRes.count}개 단어 동기화)`);
+    } else {
+      toast(`☁️ ${email} 계정으로 로그인되었습니다.`);
+    }
+    setTimeout(() => location.reload(), 350);
   });
 }
 

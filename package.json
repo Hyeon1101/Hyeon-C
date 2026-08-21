@@ -8,5 +8,8 @@
     "dev": "netlify dev",
     "build:data": "node tools/build-data.mjs",
     "enrich": "node tools/enrich-naver.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.0.1"
   }
 }

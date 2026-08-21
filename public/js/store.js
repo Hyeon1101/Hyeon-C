@@ -85,6 +85,8 @@ function load() {
 }
 
 let saveTimer = null;
+let cloudSyncTimer = null;
+
 function persist() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -95,8 +97,133 @@ function persist() {
     } catch (e) {
       console.warn('저장 실패', e);
     }
+    debouncedCloudSync();
   }, 180);
   listeners.forEach((fn) => fn(state));
+}
+
+export function syncToCloud(customState) {
+  if (isGuest()) return Promise.resolve(false);
+  const user = currentUser?.email || currentUser?.id;
+  if (!user) return Promise.resolve(false);
+
+  const payloadData = customState || state;
+  return fetch('/api/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'save',
+      user,
+      data: payloadData,
+    }),
+  })
+    .then((r) => r.json())
+    .then((res) => Boolean(res.ok))
+    .catch((err) => {
+      console.warn('Cloud sync error:', err);
+      return false;
+    });
+}
+
+function debouncedCloudSync() {
+  if (isGuest()) return;
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(() => {
+    syncToCloud();
+  }, 1200);
+}
+
+export async function syncFromCloud(user) {
+  const targetUser = user || currentUser;
+  const identifier = targetUser?.email || targetUser?.id;
+  if (!identifier) return { success: false, reason: 'no_user' };
+
+  try {
+    const res = await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'load',
+        user: identifier,
+      }),
+    });
+    const result = await res.json();
+    if (result.ok && result.found && result.data) {
+      const cloudData = result.data;
+      state = mergeState(state, cloudData);
+      const storage = getStorage();
+      storage.setItem(getStorageKey(), JSON.stringify(state));
+      listeners.forEach((fn) => fn(state));
+      return { success: true, count: Object.keys(state.words || {}).length, syncedAt: result.syncedAt };
+    } else if (result.ok && !result.found) {
+      // 클라우드에 데이터가 없으나 로컬에 이미 학습한 단어가 있다면 즉시 클라우드로 백업
+      if (Object.keys(state.words || {}).length > 0) {
+        await syncToCloud(state);
+      }
+      return { success: true, count: Object.keys(state.words || {}).length, initialUploaded: true };
+    }
+    return { success: false, reason: result.error || 'not_found' };
+  } catch (err) {
+    console.warn('Sync from cloud failed:', err);
+    return { success: false, reason: err.message };
+  }
+}
+
+export function mergeState(local, cloud) {
+  const base = DEFAULTS();
+  const mergedWords = { ...(cloud.words || {}), ...(local.words || {}) };
+
+  // 양쪽에 모두 있는 단어는 최신/높은 학습량 기준으로 스마트 병합
+  for (const [w, cItem] of Object.entries(cloud.words || {})) {
+    if (local.words?.[w]) {
+      const lItem = local.words[w];
+      mergedWords[w] = {
+        ...cItem,
+        ...lItem,
+        seen: Math.max(cItem.seen || 0, lItem.seen || 0),
+        quizRight: (cItem.quizRight || 0) + (lItem.quizRight || 0),
+        quizWrong: (cItem.quizWrong || 0) + (lItem.quizWrong || 0),
+        fav: Boolean(cItem.fav || lItem.fav),
+        mastery: Math.max(cItem.mastery || 0, lItem.mastery || 0),
+        lastSeen: Math.max(cItem.lastSeen || 0, lItem.lastSeen || 0),
+      };
+    }
+  }
+
+  // 일별 통계 병합
+  const mergedDays = { ...(cloud.days || {}) };
+  for (const [dayKey, lDay] of Object.entries(local.days || {})) {
+    if (mergedDays[dayKey]) {
+      const cDay = mergedDays[dayKey];
+      mergedDays[dayKey] = {
+        learned: Math.max(cDay.learned || 0, lDay.learned || 0),
+        review: Math.max(cDay.review || 0, lDay.review || 0),
+        quizRight: Math.max(cDay.quizRight || 0, lDay.quizRight || 0),
+        quizWrong: Math.max(cDay.quizWrong || 0, lDay.quizWrong || 0),
+        chat: Math.max(cDay.chat || 0, lDay.chat || 0),
+        pron: Math.max(cDay.pron || 0, lDay.pron || 0),
+        dictation: Math.max(cDay.dictation || 0, lDay.dictation || 0),
+        sec: Math.max(cDay.sec || 0, lDay.sec || 0),
+      };
+    } else {
+      mergedDays[dayKey] = lDay;
+    }
+  }
+
+  return {
+    ...base,
+    ...cloud,
+    ...local,
+    words: mergedWords,
+    days: mergedDays,
+    settings: { ...base.settings, ...(cloud.settings || {}), ...(local.settings || {}) },
+    meta: {
+      ...base.meta,
+      ...(cloud.meta || {}),
+      ...(local.meta || {}),
+      lastVisit: Math.max(cloud.meta?.lastVisit || 0, local.meta?.lastVisit || 0),
+    },
+  };
 }
 
 export function getUser() {
@@ -112,6 +239,8 @@ export function setUser(user) {
   }
   state = load();
   listeners.forEach((fn) => fn(state));
+  // 로그인 시 즉시 클라우드 데이터 동기화
+  syncFromCloud(user);
 }
 
 export function clearUser() {
@@ -124,6 +253,13 @@ export function clearUser() {
   }
   state = load();
   listeners.forEach((fn) => fn(state));
+}
+
+// 시작 시 로그인 상태면 백그라운드 클라우드 동기화 수행
+if (!isGuest()) {
+  setTimeout(() => {
+    syncFromCloud(currentUser);
+  }, 400);
 }
 
 export function getSavedAccounts() {
