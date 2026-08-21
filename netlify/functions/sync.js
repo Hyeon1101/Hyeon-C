@@ -30,16 +30,16 @@ export default async (req) => {
     return json({ ok: false, error: '유효한 사용자 식별자가 필요합니다.' }, 400);
   }
 
-  // 안전한 사용자 고유 키 생성
-  const safeUserKey = user.toLowerCase().trim().replace(/[^a-z0-9@._-]/g, '_');
+  // 안전한 16진수 고유 키 생성 (Netlify Blobs 키 제약 준수)
+  const safeUserKey = 'usr_' + Buffer.from(user.toLowerCase().trim()).toString('hex');
 
   try {
     let store;
     try {
-      store = getStore({ name: 'hanyu-user-data', consistency: 'strong' });
+      store = getStore('hanyu-user-data');
     } catch (e) {
       console.warn('Blobs getStore fallback:', e.message);
-      store = getStore('hanyu-user-data');
+      store = getStore({ name: 'hanyu-user-data' });
     }
 
     if (action === 'save') {
