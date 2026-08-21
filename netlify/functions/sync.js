@@ -51,16 +51,19 @@ export default async (req) => {
         syncedAt: Date.now(),
         syncedUser: safeUserKey,
       };
-      await store.setJSON(safeUserKey, toSave);
+      await store.set(safeUserKey, JSON.stringify(toSave));
       return json({ ok: true, syncedAt: toSave.syncedAt });
     }
 
     if (action === 'load') {
       let stored = null;
       try {
-        stored = await store.getJSON(safeUserKey);
+        const raw = await store.get(safeUserKey);
+        if (raw) {
+          stored = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        }
       } catch (e) {
-        console.warn('Blobs getJSON empty:', e.message);
+        console.warn('Blobs get error:', e.message);
       }
 
       if (!stored) {
