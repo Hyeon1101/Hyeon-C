@@ -1,4 +1,4 @@
-﻿import { getStore } from '@netlify/blobs';
+import { getStore } from '@netlify/blobs';
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -76,7 +76,7 @@ export default async (req) => {
       return json({ ok: true, deleted: true });
     }
 
-    return json({ ok: false, error: 알 수 없는 action:  }, 400);
+    return json({ ok: false, error: `알 수 없는 action: ${action}` }, 400);
   } catch (err) {
     console.error('Blobs sync error:', err);
     return json({ ok: false, error: '클라우드 스토리지 동기화 중 오류가 발생했습니다.', detail: err.message }, 500);
