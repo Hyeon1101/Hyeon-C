@@ -104,15 +104,6 @@ window.addEventListener('hashchange', route);
 
 /* ---------------- 상단 검색 ---------------- */
 
-let searchMode = 'auto';
-
-delegate($('#search-modes'), 'click', '.chip', (e, el) => {
-  searchMode = el.dataset.mode;
-  $$('#search-modes .chip').forEach((c) => c.classList.toggle('is-on', c === el));
-  const input = $('#search-input');
-  if (input.value.trim()) submitSearch(input.value);
-});
-
 $('#search-form').addEventListener('submit', (e) => {
   e.preventDefault();
   submitSearch($('#search-input').value);
@@ -122,11 +113,11 @@ function submitSearch(raw) {
   const q = raw.trim();
   if (!q) return;
 
-  const mode = searchMode === 'auto' ? detectMode(q) : searchMode;
+  const mode = detectMode(q);
   if (mode === 'grammar') {
     location.hash = `#/grammar?q=${encodeURIComponent(q)}`;
   } else {
-    location.hash = `#/search?q=${encodeURIComponent(q)}&mode=${searchMode}`;
+    location.hash = `#/search?q=${encodeURIComponent(q)}&mode=auto`;
   }
   // 같은 검색어를 다시 눌러도 결과를 새로 그린다
   currentRoute = '';
